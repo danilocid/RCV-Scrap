@@ -11,6 +11,8 @@ RUT = os.getenv("SII_RUT")
 CLAVE = os.getenv("SII_CLAVE")
 AMBIENTE = os.getenv("AMBIENTE", "PROD")  # Por defecto PROD si no se especifica
 
+print(f"Ejecutando en modo: {AMBIENTE}")
+
 if not RUT or not CLAVE:
     raise ValueError("Las variables de entorno SII_RUT y SII_CLAVE deben estar definidas en el archivo .env")
 
