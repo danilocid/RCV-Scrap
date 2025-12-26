@@ -6,15 +6,18 @@ from dotenv import load_dotenv
 # Cargar variables de entorno desde archivo .env
 load_dotenv()
 
-# Leer credenciales desde variables de entorno
+# Leer credenciales y configuración desde variables de entorno
 RUT = os.getenv("SII_RUT")
 CLAVE = os.getenv("SII_CLAVE")
+AMBIENTE = os.getenv("AMBIENTE", "PROD")  # Por defecto PROD si no se especifica
 
 if not RUT or not CLAVE:
     raise ValueError("Las variables de entorno SII_RUT y SII_CLAVE deben estar definidas en el archivo .env")
 
 with sync_playwright() as p:
-    browser = p.chromium.launch(headless=False)  # headless=True si no quieres ver el navegador
+    # En desarrollo (DEV) muestra el navegador, en producción lo oculta
+    headless = AMBIENTE != "DEV"
+    browser = p.chromium.launch(headless=headless)
     page = browser.new_page()
 
     # 1. Ir a login SII

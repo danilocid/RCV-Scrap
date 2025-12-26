@@ -27,6 +27,7 @@ Crear un archivo `.env` en la raíz del proyecto con las siguientes variables:
 ```env
 SII_RUT=tu-rut-completo
 SII_CLAVE=tu-clave-tributaria
+AMBIENTE=DEV
 ```
 
 **Ejemplo:**
@@ -34,7 +35,16 @@ SII_CLAVE=tu-clave-tributaria
 ```env
 SII_RUT=12345678-9
 SII_CLAVE=MiClave123
+AMBIENTE=DEV
 ```
+
+#### Descripción de Variables
+
+- `SII_RUT`: RUT completo con dígito verificador (ej: 12345678-9)
+- `SII_CLAVE`: Contraseña tributaria del SII
+- `AMBIENTE`: Entorno de ejecución
+  - `DEV`: Modo desarrollo (muestra el navegador)
+  - `PROD` o cualquier otro valor: Modo producción (navegador oculto)
 
 ## 🚀 Funcionalidades
 
