@@ -1,61 +1,95 @@
-from playwright.sync_api import sync_playwright
+"""
+RCV Scrap - Sistema de extracción del Registro de Compras y Ventas del SII
+"""
+import sys
 import time
-import os
-from dotenv import load_dotenv
+import pandas as pd
+from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 
-# Cargar variables de entorno desde archivo .env
-load_dotenv()
+# Importar módulos propios
+from config import (
+    RUT, CLAVE, AMBIENTE, TIPO_DOCUMENTO_FACTURA,
+    ARCHIVO_JSON, ARCHIVO_EXCEL, DEFAULT_TIMEOUT,
+    validar_configuracion
+)
+from scraper import login_sii, navegar_a_rcv, extraer_datos_tablas
+from procesador import eliminar_duplicados
+from guardador import guardar_datos_json, guardar_datos_excel
 
-# Leer credenciales y configuración desde variables de entorno
-RUT = os.getenv("SII_RUT")
-CLAVE = os.getenv("SII_CLAVE")
-AMBIENTE = os.getenv("AMBIENTE", "PROD")  # Por defecto PROD si no se especifica
 
-print(f"Ejecutando en modo: {AMBIENTE}")
+def main():
+    """
+    Función principal del sistema
+    """
+    print(f"Ejecutando en modo: {AMBIENTE}")
+    
+    # Validar configuración
+    try:
+        validar_configuracion()
+    except ValueError as e:
+        print(f"❌ ERROR DE CONFIGURACIÓN: {str(e)}")
+        sys.exit(1)
+    
+    try:
+        with sync_playwright() as p:
+            # Configurar navegador
+            headless = AMBIENTE != "DEV"
+            browser = p.chromium.launch(headless=headless)
+            page = browser.new_page()
+            page.set_default_timeout(DEFAULT_TIMEOUT)
+            
+            # Login en el SII
+            login_exitoso = login_sii(page, RUT, CLAVE)
+            if not login_exitoso:
+                print("❌ ERROR: Credenciales incorrectas. Verifica tu RUT y contraseña.")
+                browser.close()
+                sys.exit(1)
+            
+            # Navegar al RCV
+            navegar_a_rcv(page, TIPO_DOCUMENTO_FACTURA)
+            
+            # Extraer datos
+            datos_extraidos = extraer_datos_tablas(page)
+            
+            # Procesar y guardar datos
+            if datos_extraidos:
+                print(f"\n📊 Procesando datos finales...")
+                print(f"  Total de registros antes de eliminar duplicados: {len(datos_extraidos)}")
+                
+                # Crear estructura de datos
+                datos_completos = {
+                    "fecha_extraccion": time.strftime("%Y-%m-%d %H:%M:%S"),
+                    "tipo_documento": TIPO_DOCUMENTO_FACTURA,
+                    "datos": eliminar_duplicados(datos_extraidos)
+                }
+                
+                # Guardar en JSON
+                guardar_datos_json(datos_completos, ARCHIVO_JSON)
+                
+                # Guardar en Excel
+                if datos_completos["datos"]:
+                    df_final = pd.DataFrame(datos_completos["datos"])
+                    guardar_datos_excel([df_final], ARCHIVO_EXCEL)
+                
+                print(f"\n✓ Total de registros únicos guardados: {len(datos_completos['datos'])}")
+            else:
+                print("\n⚠ No se extrajeron datos de ninguna tabla")
+            
+            print("\n✓ Extracción completada exitosamente")
+            browser.close()
+    
+    except PlaywrightTimeoutError as e:
+        print(f"❌ ERROR DE TIMEOUT: La operación tardó demasiado tiempo.")
+        print(f"   Detalle: {str(e)}")
+        print("   Intenta nuevamente o verifica tu conexión a internet.")
+        sys.exit(1)
+    
+    except Exception as e:
+        print(f"❌ ERROR INESPERADO: {type(e).__name__}")
+        print(f"   Detalle: {str(e)}")
+        print("   Por favor, revisa el error y contacta al administrador si persiste.")
+        sys.exit(1)
 
-if not RUT or not CLAVE:
-    raise ValueError("Las variables de entorno SII_RUT y SII_CLAVE deben estar definidas en el archivo .env")
 
-with sync_playwright() as p:
-    # En desarrollo (DEV) muestra el navegador, en producción lo oculta
-    headless = AMBIENTE != "DEV"
-    browser = p.chromium.launch(headless=headless)
-    page = browser.new_page()
-
-    # 1. Ir a login SII
-    page.goto("https://misii.sii.cl/cgi_misii/siihome.cgi")
-
-    # 2. Click en "Ingresar a Mi SII"
-    page.click("text=Ingresar a Mi SII")
-    time.sleep(1)  # espera que cargue
-    # 3. Completar RUT y clave
-    page.fill('input[name="rutcntr"]', RUT)   # parte numérica
-    time.sleep(1)  # espera que cargue
-    page.fill('input[name="clave"]', CLAVE)
-    time.sleep(1)  # espera que cargue
-
-    # 4. Enviar formulario
-    page.click('button[id="bt_ingresar"]')
-    time.sleep(1)  # espera que cargue
-    page.wait_for_load_state("networkidle")
-
-    # 5. Ir al RCV
-    page.goto("https://www4.sii.cl/consdcvinternetui")
-
-    time.sleep(5)  # espera que cargue
-    page.click('button[class="btn btn-default btn-xs-block btn-block"]')
-    time.sleep(3)  # espera que cargue
-    page.wait_for_load_state("networkidle")
-    page.goto("https://www4.sii.cl/consdcvinternetui/#detalle/33")
-    time.sleep(2)  # espera que cargue
-    # 6. Ejemplo: obtener títulos de las tablas
-    page.click('a[href="#detalle/33"]')
-    time.sleep(3)  # espera que cargue
-    tablas = page.query_selector_all("table")
-    for idx, tabla in enumerate(tablas):
-        time.sleep(1)
-        print(f"Tabla {idx+1}:")
-        print(tabla.inner_text())  # imprime los primeros 500 chars
-        #print(tabla.inner_html())
-
-    browser.close()
+if __name__ == "__main__":
+    main()

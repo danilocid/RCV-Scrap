@@ -1,6 +1,12 @@
 # Variables de entorno con credenciales sensibles
 .env
 
+# Datos extraídos
+datos_rcv.json
+datos_rcv.xlsx
+*.json
+*.xlsx
+
 # Python
 __pycache__/
 *.py[cod]

@@ -9,13 +9,27 @@ Sistema de automatización para extraer datos del Registro de Compras y Ventas (
 ### Librerías Python
 
 ```bash
-pip install playwright python-dotenv
+pip install playwright python-dotenv pandas openpyxl
 ```
 
 Después de instalar Playwright, ejecutar:
 
 ```bash
 playwright install chromium
+```
+
+## 📁 Estructura del Proyecto
+
+```
+RCV_scrap/
+├── main.py           # Punto de entrada principal
+├── config.py         # Configuración y constantes del sistema
+├── scraper.py        # Módulo de extracción web (login, navegación, parseo)
+├── procesador.py     # Procesamiento y limpieza de datos
+├── guardador.py      # Exportación de datos (JSON, Excel)
+├── .env              # Variables de entorno (credenciales)
+├── .env.example      # Plantilla de variables de entorno
+└── .gitignore        # Archivos excluidos del control de versiones
 ```
 
 ## ⚙️ Configuración
@@ -51,7 +65,11 @@ AMBIENTE=DEV
 - ✅ Login automático en el portal Mi SII
 - ✅ Navegación automática al módulo RCV
 - ✅ Extracción de datos de facturas electrónicas (tipo 33)
-- ✅ Obtención de tablas HTML con información del registro
+- ✅ Extracción de razón social del emisor desde el detalle
+- ✅ Limpieza y eliminación de duplicados
+- ✅ Exportación a JSON y Excel
+- ✅ Manejo robusto de errores (timeout, credenciales incorrectas)
+- ✅ Arquitectura modular para fácil mantenimiento
 
 ## 💻 Uso
 
@@ -59,15 +77,40 @@ AMBIENTE=DEV
 python main.py
 ```
 
-El script:
+### Flujo de Ejecución
 
-1. Se conecta al portal del SII
-2. Inicia sesión con las credenciales configuradas
-3. Navega al Registro de Compras y Ventas
-4. Extrae y muestra el contenido de las tablas encontradas
+El script realiza las siguientes operaciones:
+
+1. **Validación**: Verifica que las credenciales estén configuradas
+2. **Login**: Se conecta al portal del SII con tus credenciales
+3. **Navegación**: Accede al módulo RCV y selecciona facturas tipo 33
+4. **Extracción**:
+   - Lee las tablas de datos
+   - Extrae razón social de cada documento
+5. **Procesamiento**:
+   - Elimina registros duplicados
+   - Limpia valores vacíos o nulos
+6. **Exportación**:
+   - `datos_rcv.json`: Datos estructurados en formato JSON
+   - `datos_rcv.xlsx`: Archivo Excel con los registros
+
+### Salida de Datos
+
+Los archivos generados contienen:
+
+- Fecha de extracción
+- Tipo de documento
+- Datos completos de cada factura:
+  - RUT Proveedor/Cliente
+  - Folio
+  - Fechas (documento, recepción, acuse)
+  - Montos (neto, IVA, total)
+  - Razón Social del Emisor
+  - Otros campos específicos del RCV
 
 ## 🔒 Seguridad
 
 - El archivo `.env` está incluido en `.gitignore` para proteger las credenciales
+- Los archivos JSON y Excel generados también están en `.gitignore`
 - Nunca subas tus credenciales al repositorio
 - Utiliza `.env.example` como plantilla sin datos sensibles
