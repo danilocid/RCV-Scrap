@@ -1,0 +1,62 @@
+# Cloud Build configuration for automatic deployment to Cloud Run
+# Usage: gcloud builds submit --config cloudbuild.yaml
+
+steps:
+  # Step 1: Build Docker image
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "build"
+      - "-t"
+      - "gcr.io/$PROJECT_ID/rcv-scraper:$COMMIT_SHA"
+      - "-t"
+      - "gcr.io/$PROJECT_ID/rcv-scraper:latest"
+      - "."
+    timeout: "1200s"
+
+  # Step 2: Push image to Container Registry
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "push"
+      - "gcr.io/$PROJECT_ID/rcv-scraper:$COMMIT_SHA"
+
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "push"
+      - "gcr.io/$PROJECT_ID/rcv-scraper:latest"
+
+  # Step 3: Deploy to Cloud Run
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: gcloud
+    args:
+      - "run"
+      - "deploy"
+      - "rcv-scraper"
+      - "--image"
+      - "gcr.io/$PROJECT_ID/rcv-scraper:$COMMIT_SHA"
+      - "--region"
+      - "us-central1"
+      - "--platform"
+      - "managed"
+      - "--memory"
+      - "2Gi"
+      - "--cpu"
+      - "2"
+      - "--timeout"
+      - "3600"
+      - "--max-instances"
+      - "5"
+      - "--allow-unauthenticated"
+      - "--set-env-vars"
+      - "AMBIENTE=PROD"
+
+# Build timeout
+timeout: "1800s"
+
+# Images to save in Container Registry
+images:
+  - "gcr.io/$PROJECT_ID/rcv-scraper:$COMMIT_SHA"
+  - "gcr.io/$PROJECT_ID/rcv-scraper:latest"
+
+options:
+  machineType: "E2_HIGHCPU_8"
+  logging: CLOUD_LOGGING_ONLY
