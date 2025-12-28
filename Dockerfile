@@ -1,64 +1,33 @@
-# Dockerfile para Cloud Run - RCV Scraper
 FROM python:3.11-slim
 
-# Variables de entorno
-ENV PYTHONUNBUFFERED=1 \
-    PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
-    AMBIENTE=PROD
+# Evita mensajes interactivos
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
-# Instalar dependencias del sistema necesarias para Playwright
-RUN apt-get update && apt-get install -y \
-    wget \
-    gnupg \
-    ca-certificates \
-    fonts-liberation \
-    libasound2 \
-    libatk-bridge2.0-0 \
-    libatk1.0-0 \
-    libatspi2.0-0 \
-    libcups2 \
-    libdbus-1-3 \
-    libdrm2 \
-    libgbm1 \
-    libgtk-3-0 \
-    libnspr4 \
-    libnss3 \
-    libwayland-client0 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxfixes3 \
-    libxkbcommon0 \
-    libxrandr2 \
-    xdg-utils \
-    && rm -rf /var/lib/apt/lists/*
-
-# Crear directorio de trabajo
-WORKDIR /app
-
-# Copiar requirements y instalar dependencias de Python
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Instalar navegador Chromium de Playwright
-RUN playwright install chromium
-RUN playwright install-deps chromium
-
-# Copiar código de la aplicación
-COPY . .
-
-# Hacer ejecutable el entrypoint
-RUN chmod +x entrypoint.sh
-
-# Crear usuario no-root para seguridad
-RUN useradd -m -u 1000 appuser && \
-    chown -R appuser:appuser /app /ms-playwright
+# Crea un usuario no root (Cloud Run recomendable)
+RUN adduser --disabled-password appuser
 USER appuser
 
-# Exponer puerto (Cloud Run usa 8080 por defecto)
-EXPOSE 8080
+# Define el directorio de trabajo
+WORKDIR /app
 
-# Variable de entorno para el puerto
+# Copia requirements antes para aprovechar cache
+COPY --chown=appuser:appuser requirements.txt /app/requirements.txt
+
+# Instala dependencias
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copia toda la aplicación
+COPY --chown=appuser:appuser . /app
+
+# Asegura permisos del entrypoint
+RUN chmod +x /app/entrypoint.sh
+
+# Cloud Run define PORT, pero definimos uno por defecto
 ENV PORT=8080
 
-# Script de inicio
-ENTRYPOINT ["./entrypoint.sh"]
+# Exponemos el puerto localmente (no usado por Cloud Run)
+EXPOSE 8080
+
+# Inicia el servidor
+ENTRYPOINT ["/app/entrypoint.sh"]
