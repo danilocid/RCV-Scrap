@@ -46,10 +46,8 @@ steps:
       - "--max-instances"
       - "5"
       - "--allow-unauthenticated"
-      - "--port"
-      - "8080"
       - "--set-env-vars"
-      - "AMBIENTE=PROD,PORT=8080"
+      - "AMBIENTE=PROD"
 
 # Build timeout
 timeout: "1800s"

@@ -54,5 +54,8 @@ USER appuser
 # Exponer puerto (Cloud Run usa 8080 por defecto)
 EXPOSE 8080
 
+# Variable de entorno para el puerto
+ENV PORT=8080
+
 # Comando de inicio
 CMD ["python", "main.py"]

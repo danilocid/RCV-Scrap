@@ -233,8 +233,8 @@ def iniciar_servidor(ejecutar_scraping_func):
     app = crear_app(ejecutar_scraping_func)
     
     # Obtener puerto de la variable de entorno (Cloud Run usa PORT=8080)
-    # Fallback a 8080 para desarrollo local
-    port = int(os.environ.get("PORT", 8080))
+    # Fallback a 8000 para desarrollo local
+    port = int(os.environ.get("PORT", 8000))
     
     print("\n🚀 Iniciando servidor API REST...")
     print(f"📡 Servidor disponible en: http://0.0.0.0:{port}")
