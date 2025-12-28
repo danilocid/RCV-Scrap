@@ -13,6 +13,20 @@ import uvicorn
 
 from config import ARCHIVO_JSON, ARCHIVO_EXCEL
 
+# Variable global para almacenar la función de scraping
+_ejecutar_scraping_func = None
+
+
+def configurar_scraping(func):
+    """
+    Configura la función de scraping que usará la API
+    
+    Args:
+        func: Función que ejecuta el scraping
+    """
+    global _ejecutar_scraping_func
+    _ejecutar_scraping_func = func
+
 
 def crear_app(ejecutar_scraping_func):
     """
@@ -242,3 +256,9 @@ def iniciar_servidor(ejecutar_scraping_func):
     print(f"📖 Documentación ReDoc: http://localhost:{port}/redoc\n")
     
     uvicorn.run(app, host="0.0.0.0", port=port)
+
+
+# Crear instancia de la app para Cloud Run/uvicorn
+# La función de scraping se configurará en tiempo de importación
+from extractor import ejecutar_scraping as _ejecutar_scraping_default
+app = crear_app(_ejecutar_scraping_default)

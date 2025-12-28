@@ -57,5 +57,5 @@ EXPOSE 8080
 # Variable de entorno para el puerto
 ENV PORT=8080
 
-# Comando de inicio
-CMD ["python", "main.py"]
+# Comando de inicio - usar uvicorn directamente para Cloud Run
+CMD ["uvicorn", "api_server:app", "--host", "0.0.0.0", "--port", "8080"]
