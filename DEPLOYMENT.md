@@ -327,7 +327,7 @@ gcloud run services update rcv-scraper --timeout 3600
 
 1. Revisar logs: `gcloud run services logs read rcv-scraper`
 2. Verificar que Playwright esté instalado en el Dockerfile
-3. Confirmar que el puerto 8000 esté expuesto
+3. Confirmar que el puerto 8080 esté expuesto
 
 ### Error: "Credenciales incorrectas"
 

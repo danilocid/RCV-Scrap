@@ -108,9 +108,9 @@ python main.py
 
 **Servidor disponible en:**
 
-- API: `http://localhost:8000`
-- Documentación Swagger: `http://localhost:8000/docs`
-- Documentación ReDoc: `http://localhost:8000/redoc`
+- API: `http://localhost:8080`
+- Documentación Swagger: `http://localhost:8080/docs`
+- Documentación ReDoc: `http://localhost:8080/redoc`
 
 ### 📡 Endpoints Disponibles
 
@@ -129,7 +129,7 @@ python main.py
 **1. Extracción con período actual y TODOS los tipos:**
 
 ```bash
-curl -X POST http://localhost:8000/extraer
+curl -X POST http://localhost:8080/extraer
 ```
 
 _Extrae todos los tipos de documento disponibles del mes/año actual_
@@ -137,7 +137,7 @@ _Extrae todos los tipos de documento disponibles del mes/año actual_
 **2. Extracción para período específico:**
 
 ```bash
-curl -X POST http://localhost:8000/extraer \
+curl -X POST http://localhost:8080/extraer \
   -H "Content-Type: application/json" \
   -d '{"mes": 11, "anio": 2025}'
 ```
@@ -147,7 +147,7 @@ _Extrae todos los tipos disponibles de noviembre 2025_
 **3. Extracción selectiva de tipos:**
 
 ```bash
-curl -X POST http://localhost:8000/extraer \
+curl -X POST http://localhost:8080/extraer \
   -H "Content-Type: application/json" \
   -d '{"mes": 12, "anio": 2025, "tipos_documento": ["33", "39", "61"]}'
 ```
@@ -157,14 +157,14 @@ _Extrae solo Facturas (33), Boletas (39) y Notas de Crédito (61) de diciembre 2
 **4. Consultar estado:**
 
 ```bash
-curl http://localhost:8000/estado
+curl http://localhost:8080/estado
 ```
 
 **5. Descargar datos:**
 
 ```bash
-curl -O http://localhost:8000/descargar/json
-curl -O http://localhost:8000/descargar/excel
+curl -O http://localhost:8080/descargar/json
+curl -O http://localhost:8080/descargar/excel
 ```
 
 ```bash

@@ -232,9 +232,13 @@ def iniciar_servidor(ejecutar_scraping_func):
     """
     app = crear_app(ejecutar_scraping_func)
     
-    print("\n🚀 Iniciando servidor API REST...")
-    print(f"📡 Servidor disponible en: http://localhost:8000")
-    print(f"📚 Documentación Swagger: http://localhost:8000/docs")
-    print(f"📖 Documentación ReDoc: http://localhost:8000/redoc\n")
+    # Obtener puerto de la variable de entorno (Cloud Run usa PORT=8080)
+    # Fallback a 8080 para desarrollo local
+    port = int(os.environ.get("PORT", 8080))
     
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    print("\n🚀 Iniciando servidor API REST...")
+    print(f"📡 Servidor disponible en: http://0.0.0.0:{port}")
+    print(f"📚 Documentación Swagger: http://localhost:{port}/docs")
+    print(f"📖 Documentación ReDoc: http://localhost:{port}/redoc\n")
+    
+    uvicorn.run(app, host="0.0.0.0", port=port)

@@ -51,8 +51,8 @@ RUN useradd -m -u 1000 appuser && \
     chown -R appuser:appuser /app /ms-playwright
 USER appuser
 
-# Exponer puerto
-EXPOSE 8000
+# Exponer puerto (Cloud Run usa 8080 por defecto)
+EXPOSE 8080
 
 # Comando de inicio
 CMD ["python", "main.py"]
