@@ -51,5 +51,6 @@ def validar_configuracion():
     Valida que las variables de entorno necesarias estén configuradas
     """
     if not RUT or not CLAVE:
+        print("❌ ERROR DE CONFIGURACIÓN: Las variables de entorno SII_RUT y SII_CLAVE no están definidas.")
         raise ValueError("Las variables de entorno SII_RUT y SII_CLAVE deben estar definidas en el archivo .env")
     return True
