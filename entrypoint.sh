@@ -1,5 +1,6 @@
-#!/bin/sh
-PORT=${PORT:-8080}
+#!/bin/bash
 
-echo "Iniciando servidor en puerto $PORT..."
-exec uvicorn api_server:app --host 0.0.0.0 --port $PORT
+echo "Iniciando servidor en puerto 8080..."
+
+# Ejecutar FastAPI usando python -m uvicorn evita problemas de PATH
+exec python -m uvicorn api_server:app --host 0.0.0.0 --port 8080

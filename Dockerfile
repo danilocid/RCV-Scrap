@@ -1,33 +1,33 @@
 FROM python:3.11-slim
 
-# Evita mensajes interactivos
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+# Instalar dependencias esenciales del sistema
+RUN apt-get update && apt-get install -y \
+    wget gnupg curl unzip \
+    && rm -rf /var/lib/apt/lists/*
 
-# Crea un usuario no root (Cloud Run recomendable)
-RUN adduser --disabled-password appuser
-USER appuser
+# Instalar Playwright + Chromium (compatible con Raspberry Pi ARM64)
+RUN pip install --no-cache-dir playwright && \
+    playwright install --with-deps chromium
 
-# Define el directorio de trabajo
+# Crear usuario no root
+RUN useradd -ms /bin/bash appuser
+
 WORKDIR /app
 
-# Copia requirements antes para aprovechar cache
-COPY --chown=appuser:appuser requirements.txt /app/requirements.txt
+# Copiar requerimientos primero (optimiza caché)
+COPY requirements.txt .
 
-# Instala dependencias
+# Instalar dependencias de Python como root (uvicorn queda en /usr/local/bin)
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copia toda la aplicación
-COPY --chown=appuser:appuser . /app
+# Copiar la aplicación
+COPY . .
 
-# Asegura permisos del entrypoint
-RUN chmod +x /app/entrypoint.sh
+# Asegurar permisos
+RUN chown -R appuser:appuser /app && \
+    chmod +x /app/entrypoint.sh
 
-# Cloud Run define PORT, pero definimos uno por defecto
-ENV PORT=8080
+# Cambiar usuario final
+USER appuser
 
-# Exponemos el puerto localmente (no usado por Cloud Run)
-EXPOSE 8080
-
-# Inicia el servidor
 ENTRYPOINT ["/app/entrypoint.sh"]
