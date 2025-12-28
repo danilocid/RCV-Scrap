@@ -46,6 +46,9 @@ RUN playwright install-deps chromium
 # Copiar código de la aplicación
 COPY . .
 
+# Hacer ejecutable el entrypoint
+RUN chmod +x entrypoint.sh
+
 # Crear usuario no-root para seguridad
 RUN useradd -m -u 1000 appuser && \
     chown -R appuser:appuser /app /ms-playwright
@@ -57,5 +60,5 @@ EXPOSE 8080
 # Variable de entorno para el puerto
 ENV PORT=8080
 
-# Comando de inicio - usar uvicorn directamente para Cloud Run
-CMD ["uvicorn", "api_server:app", "--host", "0.0.0.0", "--port", "8080"]
+# Script de inicio
+ENTRYPOINT ["./entrypoint.sh"]
