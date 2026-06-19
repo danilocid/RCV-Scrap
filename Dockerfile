@@ -13,6 +13,9 @@ RUN apt-get update && apt-get install -y \
     libasound2 libatspi2.0-0 libxshmfence1 xvfb \
     && rm -rf /var/lib/apt/lists/*
 
+# Crear directorio para navegadores de Playwright
+RUN mkdir -p /ms-playwright && chown appuser:appuser /ms-playwright
+
 # Crear usuario sin privilegios
 RUN useradd -m appuser
 USER appuser
