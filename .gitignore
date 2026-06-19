@@ -19,3 +19,6 @@ ENV/
 build/
 dist/
 *.egg-info/
+
+# Docker Compose (contiene credenciales)
+docker-compose.yml
