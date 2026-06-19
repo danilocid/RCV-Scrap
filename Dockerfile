@@ -30,7 +30,7 @@ RUN pip install --upgrade pip && \
     pip install -r requirements.txt
 
 # Instalar Chromium para Playwright
-RUN playwright install chromium
+RUN python -m playwright install chromium
 
 # Copiar el código
 COPY --chown=appuser:appuser . .
