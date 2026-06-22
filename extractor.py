@@ -72,9 +72,11 @@ def ejecutar_scraping(mes=None, anio=None, tipos_documento=None):
             "--disable-dev-shm-usage",
             "--disable-gpu",
             "--disable-setuid-sandbox",
-            "--no-zygote",
-            "--single-process",
             "--disable-extensions",
+            "--disable-background-networking",
+            "--disable-default-apps",
+            "--disable-sync",
+            "--no-first-run",
         ]
         
         browser = p.chromium.launch(
