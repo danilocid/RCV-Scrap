@@ -10,17 +10,51 @@ from config import *
 logger = logging.getLogger("scraper")
 
 
+def navegar(page, url, timeout=60000):
+    """
+    Navega a una URL manejando redirects y generando logs detallados.
+    Usa wait_until='domcontentloaded' para no esperar todos los recursos.
+    
+    Args:
+        page: Objeto page de Playwright
+        url: URL destino
+        timeout: Timeout en milisegundos
+        
+    Returns:
+        str: URL final después del redirect
+    """
+    logger.info("Navegando a: %s", url)
+    try:
+        response = page.goto(url, wait_until="domcontentloaded", timeout=timeout)
+        
+        if response:
+            status = response.status
+            logger.info("Respuesta HTTP: %d", status)
+            if 300 <= status < 400:
+                logger.info("Redirect detectado (HTTP %d)", status)
+        
+        url_final = page.url
+        if url_final != url:
+            logger.info("URL redirigida a: %s", url_final)
+        else:
+            logger.info("URL final (sin redirect): %s", url_final)
+        
+        return url_final
+        
+    except PlaywrightTimeoutError:
+        logger.error("Timeout (%dms) al navegar a: %s", timeout, url)
+        logger.error("URL actual del navegador: %s", page.url)
+        raise
+    except Exception as e:
+        logger.error("Error inesperado al navegar a %s: %s", url, str(e))
+        raise
+
+
 def login_sii(page, rut, clave):
     """
     Realiza el login en el portal del SII
     """
-    logger.info("Accediendo al portal del SII en %s", URL_LOGIN_SII)
-    try:
-        page.goto(URL_LOGIN_SII, timeout=60000)
-    except PlaywrightTimeoutError:
-        logger.error("Timeout al acceder al portal del SII en %s", URL_LOGIN_SII)
-        raise
-    logger.info("Página de login cargada correctamente")
+    navegar(page, URL_LOGIN_SII)
 
     # Click en "Ingresar a Mi SII"
     logger.info("Haciendo clic en 'Ingresar a Mi SII'")
@@ -75,13 +109,7 @@ def navegar_a_rcv(page, mes=None, anio=None):
         mes: Mes para filtrar (1-12), None para mes actual
         anio: Año para filtrar (ej: 2025), None para año actual
     """
-    logger.info("Navegando al módulo RCV en %s", URL_RCV)
-    try:
-        page.goto(URL_RCV, timeout=60000)
-    except PlaywrightTimeoutError:
-        logger.error("Timeout al acceder al módulo RCV en %s", URL_RCV)
-        raise
-    logger.info("Página RCV cargada correctamente")
+    navegar(page, URL_RCV)
 
     logger.info("Haciendo clic en botón de ingreso al RCV...")
     time.sleep(SLEEP_EXTRA_LONG)
@@ -287,7 +315,7 @@ def volver_a_resumen(page):
         
         # Si no encuentra botón, intentar navegar directamente
         logger.warning("No se encontró botón volver, navegando directamente a URL RCV...")
-        page.goto(URL_RCV)
+        navegar(page, URL_RCV)
         time.sleep(SLEEP_MEDIUM)
         page.wait_for_load_state("networkidle")
         logger.info("Navegación directa a resumen exitosa")
@@ -298,7 +326,7 @@ def volver_a_resumen(page):
         # Intentar navegar directamente como fallback
         try:
             logger.info("Intentando fallback: navegación directa a RCV...")
-            page.goto(URL_RCV)
+            navegar(page, URL_RCV)
             time.sleep(SLEEP_MEDIUM)
             logger.info("Fallback exitoso")
             return True
@@ -315,16 +343,7 @@ def navegar_a_detalle_tipo(page, tipo_documento):
         page: Objeto page de Playwright
         tipo_documento: Código del tipo de documento (33, 39, etc.)
     """
-    logger.info("Accediendo a detalle del tipo de documento %s...", tipo_documento)
-    url_detalle = f"{URL_RCV}/#detalle/{tipo_documento}"
-    logger.debug("Navegando a URL: %s", url_detalle)
-    try:
-        page.goto(url_detalle, timeout=60000)
-    except PlaywrightTimeoutError:
-        logger.error("Timeout al navegar al detalle del tipo %s", tipo_documento)
-        raise
-    time.sleep(SLEEP_LONG)
-    logger.info("Página de detalle del tipo %s cargada", tipo_documento)
+    navegar(page, url_detalle)
     
     # Click en el detalle del tipo de documento
     try:
