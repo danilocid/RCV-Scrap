@@ -15,12 +15,20 @@ def login_sii(page, rut, clave):
     Realiza el login en el portal del SII
     """
     logger.info("Accediendo al portal del SII en %s", URL_LOGIN_SII)
-    page.goto(URL_LOGIN_SII)
-    logger.debug("Página de login cargada")
+    try:
+        page.goto(URL_LOGIN_SII, timeout=60000)
+    except PlaywrightTimeoutError:
+        logger.error("Timeout al acceder al portal del SII en %s", URL_LOGIN_SII)
+        raise
+    logger.info("Página de login cargada correctamente")
 
     # Click en "Ingresar a Mi SII"
     logger.info("Haciendo clic en 'Ingresar a Mi SII'")
-    page.click("text=Ingresar a Mi SII")
+    try:
+        page.click("text=Ingresar a Mi SII", timeout=30000)
+    except PlaywrightTimeoutError:
+        logger.error("Timeout al hacer clic en 'Ingresar a Mi SII'")
+        raise
     time.sleep(SLEEP_MEDIUM)
     logger.debug("Formulario de credenciales visible")
     
@@ -68,8 +76,12 @@ def navegar_a_rcv(page, mes=None, anio=None):
         anio: Año para filtrar (ej: 2025), None para año actual
     """
     logger.info("Navegando al módulo RCV en %s", URL_RCV)
-    page.goto(URL_RCV)
-    logger.debug("Página RCV cargada")
+    try:
+        page.goto(URL_RCV, timeout=60000)
+    except PlaywrightTimeoutError:
+        logger.error("Timeout al acceder al módulo RCV en %s", URL_RCV)
+        raise
+    logger.info("Página RCV cargada correctamente")
 
     logger.info("Haciendo clic en botón de ingreso al RCV...")
     time.sleep(SLEEP_EXTRA_LONG)
@@ -306,9 +318,13 @@ def navegar_a_detalle_tipo(page, tipo_documento):
     logger.info("Accediendo a detalle del tipo de documento %s...", tipo_documento)
     url_detalle = f"{URL_RCV}/#detalle/{tipo_documento}"
     logger.debug("Navegando a URL: %s", url_detalle)
-    page.goto(url_detalle)
+    try:
+        page.goto(url_detalle, timeout=60000)
+    except PlaywrightTimeoutError:
+        logger.error("Timeout al navegar al detalle del tipo %s", tipo_documento)
+        raise
     time.sleep(SLEEP_LONG)
-    logger.debug("Página de detalle cargada")
+    logger.info("Página de detalle del tipo %s cargada", tipo_documento)
     
     # Click en el detalle del tipo de documento
     try:

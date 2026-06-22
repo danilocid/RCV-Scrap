@@ -115,6 +115,7 @@ def crear_app(ejecutar_scraping_func):
             estado_extraccion["fecha_fin"] = datetime.now().isoformat()
             
         except Exception as e:
+            logger.error("Error durante la extracción: %s", str(e))
             estado_extraccion["estado"] = "error"
             estado_extraccion["mensaje"] = "Error durante la extracción"
             estado_extraccion["error"] = str(e)
