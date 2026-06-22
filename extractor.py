@@ -65,7 +65,22 @@ def ejecutar_scraping(mes=None, anio=None, tipos_documento=None):
         # Configurar navegador
         headless = AMBIENTE != "DEV"
         logger.info("Iniciando navegador Chromium (headless=%s)...", headless)
-        browser = p.chromium.launch(headless=headless)
+        
+        # Args necesarios para que Chromium funcione en Cloud Run
+        chromium_args = [
+            "--no-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-gpu",
+            "--disable-setuid-sandbox",
+            "--no-zygote",
+            "--single-process",
+            "--disable-extensions",
+        ]
+        
+        browser = p.chromium.launch(
+            headless=headless,
+            args=chromium_args,
+        )
         page = browser.new_page()
         page.set_default_timeout(DEFAULT_TIMEOUT)
         logger.debug("Página creada con timeout de %d ms", DEFAULT_TIMEOUT)
