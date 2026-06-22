@@ -2,6 +2,7 @@
 Módulo de extracción y orquestación del scraping
 """
 import time
+import logging
 import pandas as pd
 from playwright.sync_api import sync_playwright
 
@@ -17,6 +18,8 @@ from scraper import (
 from procesador import eliminar_duplicados
 from guardador import guardar_datos_json, guardar_datos_excel
 
+logger = logging.getLogger("extractor")
+
 
 def ejecutar_scraping(mes=None, anio=None, tipos_documento=None):
     """
@@ -30,16 +33,16 @@ def ejecutar_scraping(mes=None, anio=None, tipos_documento=None):
     Returns:
         dict: Datos extraídos y procesados
     """
-    print(f"Ejecutando en modo: {AMBIENTE}")
+    logger.info("Ejecutando en modo: %s", AMBIENTE)
     
     # Si no se proporcionan mes y año, usar los actuales
     from datetime import datetime
     if mes is None:
         mes = datetime.now().month
-        print(f"ℹ️  Mes no especificado, usando mes actual: {mes}")
+        logger.info("Mes no especificado, usando mes actual: %d", mes)
     if anio is None:
         anio = datetime.now().year
-        print(f"ℹ️  Año no especificado, usando año actual: {anio}")
+        logger.info("Año no especificado, usando año actual: %d", anio)
     
     # Validar mes y año
     if not (1 <= mes <= 12):
@@ -56,28 +59,34 @@ def ejecutar_scraping(mes=None, anio=None, tipos_documento=None):
     
     # Mostrar información de la consulta
     periodo = f"{mes:02d}/{anio}"
-    print(f"📅 Período: {periodo}")
+    logger.info("Período a consultar: %s", periodo)
     
     with sync_playwright() as p:
         # Configurar navegador
         headless = AMBIENTE != "DEV"
+        logger.info("Iniciando navegador Chromium (headless=%s)...", headless)
         browser = p.chromium.launch(headless=headless)
         page = browser.new_page()
         page.set_default_timeout(DEFAULT_TIMEOUT)
+        logger.debug("Página creada con timeout de %d ms", DEFAULT_TIMEOUT)
         
         # Login en el SII
+        logger.info("Iniciando proceso de login en SII...")
         login_exitoso = login_sii(page, RUT, CLAVE)
         if not login_exitoso:
+            logger.error("Login fallido: credenciales incorrectas")
             raise Exception("Credenciales incorrectas. Verifica tu RUT y contraseña.")
         
         # Navegar al RCV y seleccionar período
+        logger.info("Navegando al módulo RCV...")
         navegar_a_rcv(page, mes, anio)
         
         # Obtener tipos de documentos disponibles de la tabla de resumen
+        logger.info("Obteniendo tipos de documentos disponibles...")
         tipos_disponibles = obtener_tipos_documento_disponibles(page)
         
         if not tipos_disponibles:
-            print("\n⚠ No se encontraron tipos de documentos disponibles para el período especificado")
+            logger.warning("No se encontraron tipos de documentos disponibles para el período %s", periodo)
             browser.close()
             return None
         
@@ -87,32 +96,34 @@ def ejecutar_scraping(mes=None, anio=None, tipos_documento=None):
             tipos_no_disponibles = [td for td in tipos_documento if td not in tipos_disponibles]
             
             if tipos_no_disponibles:
-                print(f"\n⚠ Los siguientes tipos NO están disponibles para el período: {', '.join(tipos_no_disponibles)}")
+                logger.warning("Los siguientes tipos NO están disponibles para el período: %s", ', '.join(tipos_no_disponibles))
             
             if not tipos_a_procesar:
-                print("\n⚠ Ninguno de los tipos especificados está disponible para el período")
+                logger.warning("Ninguno de los tipos especificados está disponible para el período %s", periodo)
                 browser.close()
                 return None
             
-            print(f"\n📄 Procesando tipos especificados que están disponibles: {', '.join(tipos_a_procesar)}")
+            logger.info("Procesando tipos especificados que están disponibles: %s", ', '.join(tipos_a_procesar))
         else:
             # Si no se especificaron tipos, usar todos los disponibles
             tipos_a_procesar = tipos_disponibles
-            print(f"\n📄 Procesando TODOS los tipos disponibles: {', '.join(tipos_a_procesar)}")
+            logger.info("Procesando TODOS los tipos disponibles: %s", ', '.join(tipos_a_procesar))
         
         # Extraer datos para cada tipo de documento disponible
         todos_los_datos = []
         total_tipos = len(tipos_a_procesar)
         
         for idx, tipo_doc in enumerate(tipos_a_procesar, 1):
-            print(f"\n{'='*60}")
-            print(f"Procesando tipo {idx}/{total_tipos}: {tipo_doc} - {TIPOS_DOCUMENTO.get(tipo_doc, 'Desconocido')}")
-            print(f"{'='*60}")
+            logger.info("="*60)
+            logger.info("Procesando tipo %d/%d: %s - %s", idx, total_tipos, tipo_doc, TIPOS_DOCUMENTO.get(tipo_doc, 'Desconocido'))
+            logger.info("="*60)
             
             # Navegar al detalle del tipo de documento
+            logger.info("Navegando al detalle del tipo %s...", tipo_doc)
             navegar_a_detalle_tipo(page, tipo_doc)
             
             # Extraer datos
+            logger.info("Extrayendo datos del tipo %s...", tipo_doc)
             datos_extraidos = extraer_datos_tablas(page)
             
             # Agregar tipo de documento a cada registro
@@ -121,19 +132,20 @@ def ejecutar_scraping(mes=None, anio=None, tipos_documento=None):
                 registro['Nombre Tipo Documento'] = TIPOS_DOCUMENTO.get(tipo_doc, 'Desconocido')
             
             todos_los_datos.extend(datos_extraidos)
-            print(f"✓ Extraídos {len(datos_extraidos)} registros del tipo {tipo_doc}")
+            logger.info("Extraídos %d registros del tipo %s", len(datos_extraidos), tipo_doc)
             
             # Volver a la pantalla de resumen antes de continuar con el siguiente tipo
             # (excepto en el último tipo)
             if idx < total_tipos:
+                logger.info("Volviendo a resumen antes de procesar siguiente tipo...")
                 volver_a_resumen(page)
         
         datos_extraidos = todos_los_datos
         
         # Procesar y guardar datos
         if datos_extraidos:
-            print(f"\n📊 Procesando datos finales...")
-            print(f"  Total de registros antes de eliminar duplicados: {len(datos_extraidos)}")
+            logger.info("Procesando datos finales...")
+            logger.info("Total de registros antes de eliminar duplicados: %d", len(datos_extraidos))
             
             # Crear estructura de datos
             datos_completos = {
@@ -147,17 +159,20 @@ def ejecutar_scraping(mes=None, anio=None, tipos_documento=None):
             }
             
             # Guardar en JSON
+            logger.info("Guardando datos en JSON: %s", ARCHIVO_JSON)
             guardar_datos_json(datos_completos, ARCHIVO_JSON)
             
             # Guardar en Excel
             if datos_completos["datos"]:
                 df_final = pd.DataFrame(datos_completos["datos"])
+                logger.info("Guardando datos en Excel: %s", ARCHIVO_EXCEL)
                 guardar_datos_excel([df_final], ARCHIVO_EXCEL)
             
-            print(f"\n✓ Total de registros únicos guardados: {len(datos_completos['datos'])}")
+            logger.info("Total de registros únicos guardados: %d", len(datos_completos['datos']))
+            logger.info("Extracción completada exitosamente")
             return datos_completos
         else:
-            print("\n⚠ No se extrajeron datos de ninguna tabla")
+            logger.warning("No se extrajeron datos de ninguna tabla")
             return None
         
         browser.close()

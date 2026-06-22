@@ -1,7 +1,10 @@
 """
 Módulo de procesamiento y limpieza de datos
 """
+import logging
 import pandas as pd
+
+logger = logging.getLogger("procesador")
 
 
 def limpiar_registro(registro):
@@ -22,9 +25,11 @@ def eliminar_duplicados(datos):
     """
     try:
         if not datos:
+            logger.debug("No hay datos para procesar duplicados")
             return []
         
         registros_iniciales = len(datos)
+        logger.info("Procesando %d registros para eliminar duplicados...", registros_iniciales)
         
         # Usar un diccionario para rastrear folios únicos
         folios_vistos = {}
@@ -43,13 +48,13 @@ def eliminar_duplicados(datos):
         duplicados_eliminados = registros_iniciales - registros_finales
         
         if duplicados_eliminados > 0:
-            print(f"  ⚠ {duplicados_eliminados} registros duplicados eliminados")
+            logger.warning("%d registros duplicados eliminados", duplicados_eliminados)
         
-        print(f"  ✓ {registros_finales} registros únicos")
+        logger.info("%d registros únicos obtenidos", registros_finales)
         
         return registros_unicos
     except Exception as e:
-        print(f"  ❌ Error al eliminar duplicados: {str(e)}")
+        logger.error("Error al eliminar duplicados: %s", str(e))
         return datos
 
 
@@ -59,7 +64,7 @@ def mostrar_datos_ordenados(datos_tabla, numero_tabla):
     """
     try:
         if not datos_tabla:
-            print(f"  ⚠ Tabla {numero_tabla}: Sin datos")
+            logger.warning("Tabla %d: Sin datos para mostrar", numero_tabla)
             return None
         
         # Convertir a DataFrame de pandas
@@ -70,14 +75,14 @@ def mostrar_datos_ordenados(datos_tabla, numero_tabla):
         pd.set_option('display.width', None)
         pd.set_option('display.max_colwidth', 50)
         
-        print(f"\n{'='*80}")
-        print(f"TABLA {numero_tabla} - Total de registros: {len(df)}")
-        print(f"{'='*80}")
-        print(f"\nColumnas: {', '.join(df.columns.tolist())}")
-        print(f"\n{df.to_string(index=True)}")
-        print(f"{'='*80}\n")
+        logger.info("="*80)
+        logger.info("TABLA %d - Total de registros: %d", numero_tabla, len(df))
+        logger.info("="*80)
+        logger.info("Columnas: %s", ', '.join(df.columns.tolist()))
+        logger.debug("\n%s", df.to_string(index=True))
+        logger.info("="*80)
         
         return df
     except Exception as e:
-        print(f"  ❌ Error al mostrar datos: {str(e)}")
+        logger.error("Error al mostrar datos de tabla %d: %s", numero_tabla, str(e))
         return None

@@ -7,11 +7,14 @@ from pydantic import BaseModel, Field
 from typing import Optional, List
 import os
 import json
+import logging
 from datetime import datetime
 from enum import Enum
 import uvicorn
 
 from config import ARCHIVO_JSON, ARCHIVO_EXCEL
+
+logger = logging.getLogger("api_server")
 
 # Variable global para almacenar la función de scraping
 _ejecutar_scraping_func = None
@@ -250,10 +253,10 @@ def iniciar_servidor(ejecutar_scraping_func):
     # Fallback a 8000 para desarrollo local
     port = int(os.environ.get("PORT", 8000))
     
-    print("\n🚀 Iniciando servidor API REST...")
-    print(f"📡 Servidor disponible en: http://0.0.0.0:{port}")
-    print(f"📚 Documentación Swagger: http://localhost:{port}/docs")
-    print(f"📖 Documentación ReDoc: http://localhost:{port}/redoc\n")
+    logger.info("Iniciando servidor API REST...")
+    logger.info("Servidor disponible en: http://0.0.0.0:%d", port)
+    logger.info("Documentación Swagger: http://localhost:%d/docs", port)
+    logger.info("Documentación ReDoc: http://localhost:%d/redoc", port)
     
     uvicorn.run(app, host="0.0.0.0", port=port)
 

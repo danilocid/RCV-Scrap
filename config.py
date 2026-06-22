@@ -2,7 +2,24 @@
 Configuración y constantes del sistema RCV Scrap
 """
 import os
+import sys
+import logging
 from dotenv import load_dotenv
+
+# Configurar logging a nivel de módulo para que funcione tanto con main() como con uvicorn directo
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logging.getLogger("playwright").setLevel(logging.WARNING)
+logging.getLogger("uvicorn").setLevel(logging.WARNING)
+logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+
+logger = logging.getLogger("config")
 
 # Cargar variables de entorno
 load_dotenv()
@@ -51,6 +68,7 @@ def validar_configuracion():
     Valida que las variables de entorno necesarias estén configuradas
     """
     if not RUT or not CLAVE:
-        print("❌ ERROR DE CONFIGURACIÓN: Las variables de entorno SII_RUT y SII_CLAVE no están definidas.")
+        logger.error("ERROR DE CONFIGURACIÓN: Las variables de entorno SII_RUT y SII_CLAVE no están definidas.")
         raise ValueError("Las variables de entorno SII_RUT y SII_CLAVE deben estar definidas en el archivo .env")
+    logger.info("Configuración validada correctamente (RUT: %s***)", RUT[:7])
     return True
